@@ -4,9 +4,8 @@
  * OBJETIVO : Funções e Classes Relativas a NFE (Envio de Email)             *
  * AUTOR    : Fernando Athayde - fernando_athayde@yahoo.com.br               *
  * ALTERADO : Marcelo Antonio Lázzaro Carli                                  *
- * ALTERADO : Franklin Brasil                                                *
  * DATA     : 28.08.2011                                                     *
- * ULT. ALT.: 11.06.2026                                                     *
+ * ULT. ALT.: 16.01.2025                                                     *
  *****************************************************************************/
 #include "common.ch"
 #include "hbclass.ch"
@@ -25,18 +24,18 @@ CLASS hbNFeEmail
    DATA cUser
    DATA cPass
    DATA nPortSMTP
-   DATA lConf     INIT .F.
-   DATA lSSL      INIT .F.
-   DATA lAut      INIT .F.
-   DATA lTLS      INIT .F.
-   DATA aFiles    INIT {}
+   DATA lConf  INIT .F.
+   DATA lSSL   INIT .F.
+   DATA lAut   INIT .F.
+   DATA lTLS   INIT .F.
+   DATA aFiles INIT {}
    DATA aTo
    DATA aCC
    DATA aBCC
    DATA cProvider INIT []
    DATA cLastErro INIT []
    DATA cLastModo INIT []
-   DATA nTimeout  INIT 60
+   DATA nTimeout INIT 60
 
    METHOD New()
    METHOD UseGmail()
@@ -49,7 +48,6 @@ CLASS hbNFeEmail
    METHOD AddFile()
    METHOD Execute()
 ENDCLASS
-
 METHOD New() CLASS hbNFeEmail
    ::aFiles := {}
    ::aTo    := {}
@@ -73,6 +71,7 @@ METHOD UseGmail( cEmail, cSenhaApp ) CLASS hbNFeEmail
    ::cPass := AllTrim( HbNfeEmailDefault( cSenhaApp, [] ) )
    ::cFrom := ::cUser
 RETURN Self
+
 
 METHOD UseBrevo( cSmtpLogin, cSmtpKey, cFrom, nPorta ) CLASS hbNFeEmail
    ::cProvider := [BREVO]
@@ -159,9 +158,8 @@ METHOD AddFile( cArquivo ) CLASS hbNFeEmail
       AAdd( ::aFiles, AllTrim( cArquivo ) )
    ENDIF
 RETURN Self
-
 METHOD Execute() CLASS hbNFeEmail
-   Local aRetorno:= Hash(), oCfg, oMsg, oError, nITo, nIFiles, cArgs, cFileName, nXa, cArg, oRetorno
+   Local aRetorno:= {=>}, oCfg, oMsg, oError, nITo, nIFiles, cArgs, cFileName, nXa, cArg, oRetorno
 
    If Valtype(::aTo) == [C]
       ::aTo:= {::aTo}
@@ -214,7 +212,7 @@ METHOD Execute() CLASS hbNFeEmail
    Endif
 
    // preparar
-   TRY
+   BEGIN SEQUENCE WITH {|oErr| Break(oErr)}
      #ifdef __XHARBOUR__
         oCfg:= xhb_CreateObject("CDO.Configuration")
      #Else
@@ -233,16 +231,16 @@ METHOD Execute() CLASS hbNFeEmail
 
        :Update()
      END WITH
-   CATCH oError
+   RECOVER USING oError
      aRetorno["OK"]     := .F.
-     aRetorno["MsgErro"]:= "Falha conexão com o smtp"                          + hb_Eol() + ;
-                           "Erro: "      + Transf(oError:GenCode, Nil)   + ";" + hb_Eol() + ;
-                     	   "SubC: "      + Transf(oError:SubCode, Nil)   + ";" + hb_Eol() + ;
-                      	   "OSCode: "    + Transf(oError:OsCode,  Nil)   + ";" + hb_Eol() + ;
-                      	   "SubSystem: " + Transf(oError:SubSystem, Nil) + ";" + hb_Eol() + ;
+     aRetorno["MsgErro"]:= "Falha conexão com o smtp"                          + HB_OsNewLine() + ;
+                           "Erro: "      + Transf(oError:GenCode, Nil)   + ";" + HB_OsNewLine() + ;
+                     	   "SubC: "      + Transf(oError:SubCode, Nil)   + ";" + HB_OsNewLine() + ;
+                      	   "OSCode: "    + Transf(oError:OsCode,  Nil)   + ";" + HB_OsNewLine() + ;
+                      	   "SubSystem: " + Transf(oError:SubSystem, Nil) + ";" + HB_OsNewLine() + ;
                       	   "Mensagem: "  + oError:Description
      Return(aRetorno)
-   END
+   END SEQUENCE
 
    // enviar
    For nITo:= 1 To Len(::aTo)
@@ -288,9 +286,9 @@ METHOD Execute() CLASS hbNFeEmail
             :Fields:update()
          Endif
        END WITH
-       TRY
+       BEGIN SEQUENCE WITH {|oErr| Break(oErr)}
          oRetorno:= oMsg:Send()
-       CATCH oError
+       RECOVER USING oError
          cFilename:= []
          If oError:Filename # Nil
             If Valtype(oError:Filename) == [C]
@@ -323,21 +321,21 @@ METHOD Execute() CLASS hbNFeEmail
                cArgs:= Valtype(oError:Args)
             Endif
          Endif
-	 aRetorno["MsgErro"]:= "Falha envio de email"                                                                                                            + hb_Eol()+ ;
-                               "Erro: "      + Transf(oError:GenCode, Nil) + ";"                                                                                 + hb_Eol()+ ;
-                               "SubC: "      + Transf(oError:SubCode, Nil) + ";"                                                                                 + hb_Eol()+ ;
-                               "OSCode: "    + Transf(oError:OsCode,  Nil) + ";"                                                                                 + hb_Eol()+ ;
-                               "SubSystem: " + If(oError:SubSystem == Nil, [], oError:SubSystem) + ";"                                                           + hb_Eol()+ ;
-                               "Operação: "  + If(oError:Operation == Nil, [], If(IsCharacter(oError:Operation), oError:Operation, Str(oError:Operation))) + ";" + hb_Eol()+ ;
-                               "Arquivo: "   + cFilename + ";"                                                                                                   + hb_Eol()+ ;
-                               "Args: "      + cArgs + ";"                                                                                                       + hb_Eol()+ ;
+	 aRetorno["MsgErro"]:= "Falha envio de email"                                                                                                            + HB_OsNewLine()+ ;
+                               "Erro: "      + Transf(oError:GenCode, Nil) + ";"                                                                                 + HB_OsNewLine()+ ;
+                               "SubC: "      + Transf(oError:SubCode, Nil) + ";"                                                                                 + HB_OsNewLine()+ ;
+                               "OSCode: "    + Transf(oError:OsCode,  Nil) + ";"                                                                                 + HB_OsNewLine()+ ;
+                               "SubSystem: " + If(oError:SubSystem == Nil, [], oError:SubSystem) + ";"                                                           + HB_OsNewLine()+ ;
+                               "Operação: "  + If(oError:Operation == Nil, [], If(IsCharacter(oError:Operation), oError:Operation, Str(oError:Operation))) + ";" + HB_OsNewLine()+ ;
+                               "Arquivo: "   + cFilename + ";"                                                                                                   + HB_OsNewLine()+ ;
+                               "Args: "      + cArgs + ";"                                                                                                       + HB_OsNewLine()+ ;
                                "Mensagem: "  + If(oError:Description == Nil, [], oError:Description) + ";"
          #ifndef __XHARBOUR__
              aRetorno["MsgErro"] += "WinOle: " + win_oleErrorText()
          #Endif
          aRetorno["OK"]:= .F.
          Return(aRetorno)
-       END
+       END SEQUENCE
    Next
    aRetorno["OK"]:= .T.
    aRetorno["MsgErro"]:= []
