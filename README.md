@@ -71,6 +71,7 @@ Para Gmail, nao use senha normal da conta. Use senha de app.
 harbour
 oEmail:cPass := "senha_de_app_do_gmail"
 
+Veja vídeo em: https://www.youtube.com/watch?v=vaZ_XV5yvf4&t=54s
 
 ### nPortSMTP
 Porta SMTP.
