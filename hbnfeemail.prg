@@ -4,8 +4,9 @@
  * OBJETIVO : Funções e Classes Relativas a NFE (Envio de Email)             *
  * AUTOR    : Fernando Athayde - fernando_athayde@yahoo.com.br               *
  * ALTERADO : Marcelo Antonio Lázzaro Carli                                  *
+ * ALTERADO : Franklin Brasil                                                *
  * DATA     : 28.08.2011                                                     *
- * ULT. ALT.: 16.01.2025                                                     *
+ * ULT. ALT.: 11.06.2026                                                     *
  *****************************************************************************/
 #include "common.ch"
 #include "hbclass.ch"
@@ -24,18 +25,18 @@ CLASS hbNFeEmail
    DATA cUser
    DATA cPass
    DATA nPortSMTP
-   DATA lConf  INIT .F.
-   DATA lSSL   INIT .F.
-   DATA lAut   INIT .F.
-   DATA lTLS   INIT .F.
-   DATA aFiles INIT {}
+   DATA lConf     INIT .F.
+   DATA lSSL      INIT .F.
+   DATA lAut      INIT .F.
+   DATA lTLS      INIT .F.
+   DATA aFiles    INIT {}
    DATA aTo
    DATA aCC
    DATA aBCC
    DATA cProvider INIT []
    DATA cLastErro INIT []
    DATA cLastModo INIT []
-   DATA nTimeout INIT 60
+   DATA nTimeout  INIT 60
 
    METHOD New()
    METHOD UseGmail()
@@ -48,15 +49,16 @@ CLASS hbNFeEmail
    METHOD AddFile()
    METHOD Execute()
 ENDCLASS
+
 METHOD New() CLASS hbNFeEmail
-   ::aFiles := {}
-   ::aTo    := {}
-   ::aCC    := {}
-   ::aBCC   := {}
-   ::lAut   := .T.
-   ::lSSL   := .F.
-   ::lTLS   := .T.
-   ::nPortSMTP := 587
+   ::aFiles   := {}
+   ::aTo      := {}
+   ::aCC      := {}
+   ::aBCC     := {}
+   ::lAut     := .T.
+   ::lSSL     := .F.
+   ::lTLS     := .T.
+   ::nPortSMTP:= 587
    ::nTimeout := 60
 RETURN Self
 
@@ -64,12 +66,12 @@ METHOD UseGmail( cEmail, cSenhaApp ) CLASS hbNFeEmail
    ::cProvider := [GMAIL]
    ::cServerIP := [smtp.gmail.com]
    ::nPortSMTP := 465
-   ::lAut := .T.
-   ::lSSL := .T.
-   ::lTLS := .F.
-   ::cUser := AllTrim( HbNfeEmailDefault( cEmail, [] ) )
-   ::cPass := AllTrim( HbNfeEmailDefault( cSenhaApp, [] ) )
-   ::cFrom := ::cUser
+   ::lAut      := .T.
+   ::lSSL      := .T.
+   ::lTLS      := .F.
+   ::cUser     := AllTrim( HbNfeEmailDefault( cEmail, [] ) )
+   ::cPass     := AllTrim( HbNfeEmailDefault( cSenhaApp, [] ) )
+   ::cFrom     := ::cUser
 RETURN Self
 
 
@@ -77,15 +79,15 @@ METHOD UseBrevo( cSmtpLogin, cSmtpKey, cFrom, nPorta ) CLASS hbNFeEmail
    ::cProvider := [BREVO]
    ::cServerIP := [smtp-relay.brevo.com]
    ::nPortSMTP := HbNfeEmailDefault( nPorta, 587 )
-   ::lAut := .T.
-   ::lSSL := ::nPortSMTP == 465
-   ::lTLS := ! ::lSSL
-   ::cUser := AllTrim( HbNfeEmailDefault( cSmtpLogin, [] ) )
-   ::cPass := AllTrim( HbNfeEmailDefault( cSmtpKey, [] ) )
+   ::lAut      := .T.
+   ::lSSL      := ::nPortSMTP == 465
+   ::lTLS      := ! ::lSSL
+   ::cUser     := AllTrim( HbNfeEmailDefault( cSmtpLogin, [] ) )
+   ::cPass     := AllTrim( HbNfeEmailDefault( cSmtpKey, [] ) )
    IF ! Empty( cFrom )
-      ::cFrom := AllTrim( cFrom )
+      ::cFrom  := AllTrim( cFrom )
    ELSE
-      ::cFrom := ::cUser
+      ::cFrom  := ::cUser
    ENDIF
 RETURN Self
 
@@ -93,25 +95,25 @@ METHOD UseMicrosoft365( cEmail, cSenha ) CLASS hbNFeEmail
    ::cProvider := [MICROSOFT365]
    ::cServerIP := [smtp.office365.com]
    ::nPortSMTP := 587
-   ::lAut := .T.
-   ::lSSL := .T.
-   ::lTLS := .T.
-   ::cUser := AllTrim( HbNfeEmailDefault( cEmail, [] ) )
-   ::cPass := AllTrim( HbNfeEmailDefault( cSenha, [] ) )
-   ::cFrom := ::cUser
+   ::lAut      := .T.
+   ::lSSL      := .T.
+   ::lTLS      := .T.
+   ::cUser     := AllTrim( HbNfeEmailDefault( cEmail, [] ) )
+   ::cPass     := AllTrim( HbNfeEmailDefault( cSenha, [] ) )
+   ::cFrom     := ::cUser
 RETURN Self
 
 METHOD UseSMTP( cServer, nPorta, cUsuario, cSenha, lSSL, lTLS ) CLASS hbNFeEmail
    ::cProvider := [SMTP]
    ::cServerIP := AllTrim( HbNfeEmailDefault( cServer, [] ) )
    ::nPortSMTP := HbNfeEmailDefault( nPorta, 587 )
-   ::cUser := AllTrim( HbNfeEmailDefault( cUsuario, [] ) )
-   ::cPass := AllTrim( HbNfeEmailDefault( cSenha, [] ) )
-   ::lAut := ! Empty( ::cUser )
-   ::lSSL := HbNfeEmailDefault( lSSL, .F. )
-   ::lTLS := HbNfeEmailDefault( lTLS, .T. )
+   ::cUser     := AllTrim( HbNfeEmailDefault( cUsuario, [] ) )
+   ::cPass     := AllTrim( HbNfeEmailDefault( cSenha, [] ) )
+   ::lAut      := ! Empty( ::cUser )
+   ::lSSL      := HbNfeEmailDefault( lSSL, .F. )
+   ::lTLS      := HbNfeEmailDefault( lTLS, .T. )
    IF Empty( ::cFrom )
-      ::cFrom := ::cUser
+      ::cFrom  := ::cUser
    ENDIF
 RETURN Self
 
@@ -233,11 +235,11 @@ METHOD Execute() CLASS hbNFeEmail
      END WITH
    RECOVER USING oError
      aRetorno["OK"]     := .F.
-     aRetorno["MsgErro"]:= "Falha conexão com o smtp"                          + HB_OsNewLine() + ;
-                           "Erro: "      + Transf(oError:GenCode, Nil)   + ";" + HB_OsNewLine() + ;
-                     	   "SubC: "      + Transf(oError:SubCode, Nil)   + ";" + HB_OsNewLine() + ;
-                      	   "OSCode: "    + Transf(oError:OsCode,  Nil)   + ";" + HB_OsNewLine() + ;
-                      	   "SubSystem: " + Transf(oError:SubSystem, Nil) + ";" + HB_OsNewLine() + ;
+     aRetorno["MsgErro"]:= "Falha conexão com o smtp"                          + hb_Eol() + ;
+                           "Erro: "      + Transf(oError:GenCode, Nil)   + ";" + hb_Eol() + ;
+                     	   "SubC: "      + Transf(oError:SubCode, Nil)   + ";" + hb_Eol() + ;
+                      	   "OSCode: "    + Transf(oError:OsCode,  Nil)   + ";" + hb_Eol() + ;
+                      	   "SubSystem: " + Transf(oError:SubSystem, Nil) + ";" + hb_Eol() + ;
                       	   "Mensagem: "  + oError:Description
      Return(aRetorno)
    END SEQUENCE
@@ -321,14 +323,14 @@ METHOD Execute() CLASS hbNFeEmail
                cArgs:= Valtype(oError:Args)
             Endif
          Endif
-	 aRetorno["MsgErro"]:= "Falha envio de email"                                                                                                            + HB_OsNewLine()+ ;
-                               "Erro: "      + Transf(oError:GenCode, Nil) + ";"                                                                                 + HB_OsNewLine()+ ;
-                               "SubC: "      + Transf(oError:SubCode, Nil) + ";"                                                                                 + HB_OsNewLine()+ ;
-                               "OSCode: "    + Transf(oError:OsCode,  Nil) + ";"                                                                                 + HB_OsNewLine()+ ;
-                               "SubSystem: " + If(oError:SubSystem == Nil, [], oError:SubSystem) + ";"                                                           + HB_OsNewLine()+ ;
-                               "Operação: "  + If(oError:Operation == Nil, [], If(IsCharacter(oError:Operation), oError:Operation, Str(oError:Operation))) + ";" + HB_OsNewLine()+ ;
-                               "Arquivo: "   + cFilename + ";"                                                                                                   + HB_OsNewLine()+ ;
-                               "Args: "      + cArgs + ";"                                                                                                       + HB_OsNewLine()+ ;
+	 aRetorno["MsgErro"]:= "Falha envio de email"                                                                                                            + hb_Eol()+ ;
+                               "Erro: "      + Transf(oError:GenCode, Nil) + ";"                                                                                 + hb_Eol()+ ;
+                               "SubC: "      + Transf(oError:SubCode, Nil) + ";"                                                                                 + hb_Eol()+ ;
+                               "OSCode: "    + Transf(oError:OsCode,  Nil) + ";"                                                                                 + hb_Eol()+ ;
+                               "SubSystem: " + If(oError:SubSystem == Nil, [], oError:SubSystem) + ";"                                                           + hb_Eol()+ ;
+                               "Operação: "  + If(oError:Operation == Nil, [], If(IsCharacter(oError:Operation), oError:Operation, Str(oError:Operation))) + ";" + hb_Eol()+ ;
+                               "Arquivo: "   + cFilename + ";"                                                                                                   + hb_Eol()+ ;
+                               "Args: "      + cArgs + ";"                                                                                                       + hb_Eol()+ ;
                                "Mensagem: "  + If(oError:Description == Nil, [], oError:Description) + ";"
          #ifndef __XHARBOUR__
              aRetorno["MsgErro"] += "WinOle: " + win_oleErrorText()
