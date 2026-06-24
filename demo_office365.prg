@@ -5,12 +5,11 @@ PROCEDURE Main()
 
    oEmail := hbNFeEmail():New()
 
-   // Gmail atual: usar senha de app, nao a senha normal da conta.
-   oEmail:UseGmail( "seuemail@gmail.com", "kxkxcsdwcwyjklll" )
+   oEmail:UseMicrosoft365( "seuemail@empresa.com.br", "3$o#1@49Hxx" )
 
    oEmail:AddTo( "marceloalcarli@gmail.com" )
-   oEmail:cSubject  := "Teste de envio Gmail"
-   oEmail:cMsgTexto := "Teste de envio pela classe hbNFeEmail usando Gmail."
+   oEmail:cSubject  := "Teste de envio Microsoft365"
+   oEmail:cMsgTexto := "Teste de envio pela classe hbNFeEmail usando Microsoft365."
 
    // Opcional:
    oEmail:AddFile( "D:\classe_email\email.rar" )

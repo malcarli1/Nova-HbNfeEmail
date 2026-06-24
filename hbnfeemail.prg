@@ -74,7 +74,6 @@ METHOD UseGmail( cEmail, cSenhaApp ) CLASS hbNFeEmail
    ::cFrom     := ::cUser
 RETURN Self
 
-
 METHOD UseBrevo( cSmtpLogin, cSmtpKey, cFrom, nPorta ) CLASS hbNFeEmail
    ::cProvider := [BREVO]
    ::cServerIP := [smtp-relay.brevo.com]
@@ -94,7 +93,7 @@ RETURN Self
 METHOD UseMicrosoft365( cEmail, cSenha ) CLASS hbNFeEmail
    ::cProvider := [MICROSOFT365]
    ::cServerIP := [smtp.office365.com]
-   ::nPortSMTP := 587
+   ::nPortSMTP := 587  // se não funcionar use 25
    ::lAut      := .T.
    ::lSSL      := .T.
    ::lTLS      := .T.
@@ -160,6 +159,7 @@ METHOD AddFile( cArquivo ) CLASS hbNFeEmail
       AAdd( ::aFiles, AllTrim( cArquivo ) )
    ENDIF
 RETURN Self
+
 METHOD Execute() CLASS hbNFeEmail
    Local aRetorno:= {=>}, oCfg, oMsg, oError, nITo, nIFiles, cArgs, cFileName, nXa, cArg, oRetorno
 
