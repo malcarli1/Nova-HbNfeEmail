@@ -71,7 +71,6 @@ Para Gmail, nao use senha normal da conta. Use senha de app.
 harbour
 oEmail:cPass := "senha_de_app_do_gmail"
 
-Veja vídeo em: https://www.youtube.com/watch?v=vaZ_XV5yvf4&t=54s
 
 ### nPortSMTP
 Porta SMTP.
@@ -153,6 +152,7 @@ aRetorno["MsgErro"]
 
 
 Exemplo:
+```
 harbour
 aRet := oEmail:Execute()
 IF aRet["OK"]
@@ -163,6 +163,7 @@ ELSE
 ENDIF
 
 ## Exemplo basico - servidor SMTP comum
+
 harbour
 LOCAL oEmail, aRet
 oEmail := hbNFeEmail():New()
@@ -186,7 +187,7 @@ aRet := oEmail:Execute()
 IF ! aRet["OK"]
    ? aRet["MsgErro"]
 ENDIF
-
+```
 
 ## Exemplo Gmail
 Configuracao recomendada:
@@ -198,8 +199,8 @@ SSL direto: nao
 Usuario: e-mail completo
 Senha: senha de app, nao senha normal
 
-
 Exemplo:
+```
 harbour
 LOCAL oEmail, aRet
 oEmail := hbNFeEmail():New()
@@ -226,7 +227,7 @@ IF aRet["OK"]
 ELSE
    ? aRet["MsgErro"]
 ENDIF
-
+```
 
 ## Erros comuns no Gmail
 
@@ -277,7 +278,7 @@ Senha: senha da conta ou senha permitida pelo tenant
 
 
 Exemplo:
-
+```
 harbour
 LOCAL oEmail, aRet
 
@@ -303,7 +304,7 @@ aRet := oEmail:Execute()
 IF ! aRet["OK"]
    ? aRet["MsgErro"]
 ENDIF
-
+```
 
 ## Observacao Microsoft 365
 
@@ -318,7 +319,7 @@ Para produto novo ou vendido comercialmente, o ideal e implementar uma destas op
 ## Sugestao de interface nova para facilitar o programador
 
 Uma versao modernizada da classe pode manter compatibilidade e acrescentar metodos auxiliares:
-
+```
 harbour
 oEmail := hbNFeEmail():New()
 oEmail:UseGmail( "suaempresa@gmail.com", "senha_de_app" )
@@ -339,7 +340,7 @@ oEmail:AddTo( "cliente@empresa.com.br" )
 oEmail:cSubject  := "NF-e emitida"
 oEmail:cMsgTexto := "Segue documento fiscal."
 aRet := oEmail:Execute()
-
+```
 
 ## Checklist de configuracao
 
@@ -386,7 +387,7 @@ aRet["Raw"]      // retorno bruto do transporte
 
 
 Exemplo de uso:
-
+```
 harbour
 aRet := oEmail:Execute()
 
@@ -400,7 +401,7 @@ A classe tambem possui a variacao:
 
 harbour
 oEmail:UseBrevo( cSmtpLogin, cSmtpKey, cFrom, nPorta )
-
+```
 Parametros:
 
 text
@@ -426,7 +427,7 @@ Nao use a senha da conta Brevo.
 O remetente ou dominio precisa estar validado no Brevo.
 
 Exemplo:
-
+```
 harbour
 LOCAL oEmail, aRet
 
@@ -461,4 +462,4 @@ Para SSL direto:
 
 harbour
 oEmail:UseBrevo( "login", "smtp_key", "nfe@seudominio.com.br", 465 )
-
+```
