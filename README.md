@@ -463,3 +463,13 @@ Para SSL direto:
 harbour
 oEmail:UseBrevo( "login", "smtp_key", "nfe@seudominio.com.br", 465 )
 ```
+<div align="center">
+
+<b>Marcelo A. L. Carli</b><br>
+Malc Informática — Gestão em Saúde Ocupacional<br>
+📍 Marília/SP — Capital Nacional do Alimento ®<br>
+🌐 <a href="https://malc-informatica.ueniweb.com" target="_blank">malc-informatica.ueniweb.com</a><br>
+📧 <a href="mailto:marceloalcarli@gmail.com">marceloalcarli@gmail.com</a><br>
+📱 Instagram: <a href="https://instagram.com/malcarli25" target="_blank">@malcarli25</a>
+
+</div>
