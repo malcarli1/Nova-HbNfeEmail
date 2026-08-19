@@ -6,7 +6,7 @@
  * ALTERADO : Marcelo Antonio Lázzaro Carli                                  *
  * ALTERADO : Franklin Brasil                                                *
  * DATA     : 28.08.2011                                                     *
- * ULT. ALT.: 11.06.2026                                                     *
+ * ULT. ALT.: 19.08.2026                                                     *
  *****************************************************************************/
 #include "common.ch"
 #include "hbclass.ch"
@@ -48,6 +48,7 @@ CLASS hbNFeEmail
    METHOD AddBCC()
    METHOD AddFile()
    METHOD Execute()
+   METHOD ExecuteGmailNative()
 ENDCLASS
 
 METHOD New() CLASS hbNFeEmail
@@ -65,10 +66,10 @@ RETURN Self
 METHOD UseGmail( cEmail, cSenhaApp ) CLASS hbNFeEmail
    ::cProvider := [GMAIL]
    ::cServerIP := [smtp.gmail.com]
-   ::nPortSMTP := 465
+   ::nPortSMTP := 587
    ::lAut      := .T.
-   ::lSSL      := .T.
-   ::lTLS      := .F.
+   ::lSSL      := .F.
+   ::lTLS      := .T.
    ::cUser     := AllTrim( HbNfeEmailDefault( cEmail, [] ) )
    ::cPass     := AllTrim( HbNfeEmailDefault( cSenhaApp, [] ) )
    ::cFrom     := ::cUser
@@ -162,6 +163,10 @@ RETURN Self
 
 METHOD Execute() CLASS hbNFeEmail
    Local aRetorno:= {=>}, oCfg, oMsg, oError, nITo, nIFiles, cArgs, cFileName, nXa, cArg, oRetorno
+
+   IF ::cProvider == [GMAIL]
+      RETURN ::ExecuteGmailNative()
+   ENDIF
 
    If Valtype(::aTo) == [C]
       ::aTo:= {::aTo}
@@ -345,6 +350,128 @@ METHOD Execute() CLASS hbNFeEmail
    aRetorno["Server"]:= ::cServerIP
    aRetorno["Porta"]:= ::nPortSMTP
 Return(aRetorno)
+
+
+METHOD ExecuteGmailNative() CLASS hbNFeEmail
+   LOCAL aRetorno := {=>}, cTmpBase, cPsFile, cResultFile, cPs := [], cOut := [], cErr := [], nRet
+   LOCAL nI, cBody, lHtml, cFile
+
+   IF Valtype(::aTo) == [C]
+      ::aTo:= {::aTo}
+   ELSEIF ValType(::aTo) != [A]
+      ::aTo:= {}
+   ENDIF
+   IF Valtype(::aCC) == [C]
+      ::aCC:= {::aCC}
+   ELSEIF ValType(::aCC) != [A]
+      ::aCC:= {}
+   ENDIF
+   IF Valtype(::aBCC) == [C]
+      ::aBCC:= {::aBCC}
+   ELSEIF ValType(::aBCC) != [A]
+      ::aBCC:= {}
+   ENDIF
+   IF Valtype(::aFiles) == [C]
+      ::aFiles:= {::aFiles}
+   ELSEIF ValType(::aFiles) != [A]
+      ::aFiles:= {}
+   ENDIF
+
+   IF Len(::aTo) == 0
+      aRetorno["OK"]:= .F.
+      aRetorno["MsgErro"]:= [Nenhum destinatario informado]
+      RETURN aRetorno
+   ENDIF
+
+   FOR nI := 1 TO Len(::aFiles)
+      IF ! File( AllTrim(::aFiles[nI]) )
+         aRetorno["OK"]:= .F.
+         aRetorno["MsgErro"]:= "Arquivo nao encontrado: " + AllTrim(::aFiles[nI])
+         RETURN aRetorno
+      ENDIF
+   NEXT
+
+   IF Empty(::cServerIP)
+      ::cServerIP := [smtp.gmail.com]
+   ENDIF
+   IF Empty(::nPortSMTP)
+      ::nPortSMTP := 587
+   ENDIF
+
+   cTmpBase := hb_DirTemp() + "hbnfeemail_" + StrTran( DToS(Date()) + StrTran(Time(), ":", ""), " ", "" ) + "_" + LTrim(Str(Int(Seconds() * 1000)))
+   cPsFile := cTmpBase + ".ps1"
+   cResultFile := cTmpBase + ".log"
+   lHtml := ! Empty(::cMsgHTML) .AND. Empty(::cMsgTexto)
+   cBody := IIf( lHtml, ::cMsgHTML, ::cMsgTexto )
+
+   cPs += "$ErrorActionPreference = 'Stop'" + hb_Eol()
+   cPs += "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12" + hb_Eol()
+   cPs += "$smtp = $null" + hb_Eol()
+   cPs += "$msg = $null" + hb_Eol()
+   cPs += "try {" + hb_Eol()
+   cPs += "  $smtp = New-Object Net.Mail.SmtpClient(" + HbNfeEmailPsString(::cServerIP) + ", " + LTrim(Str(::nPortSMTP)) + ")" + hb_Eol()
+   cPs += "  $smtp.EnableSsl = $true" + hb_Eol()
+   cPs += "  $smtp.Timeout = " + LTrim(Str(::nTimeout * 1000)) + hb_Eol()
+   cPs += "  $smtp.Credentials = New-Object Net.NetworkCredential(" + HbNfeEmailPsString(::cUser) + ", " + HbNfeEmailPsString(::cPass) + ")" + hb_Eol()
+   cPs += "  $msg = New-Object Net.Mail.MailMessage" + hb_Eol()
+   cPs += "  $msg.From = " + HbNfeEmailPsString(::cFrom) + hb_Eol()
+   FOR nI := 1 TO Len(::aTo)
+      cPs += "  $msg.To.Add(" + HbNfeEmailPsString(AllTrim(::aTo[nI])) + ")" + hb_Eol()
+   NEXT
+   FOR nI := 1 TO Len(::aCC)
+      cPs += "  $msg.CC.Add(" + HbNfeEmailPsString(AllTrim(::aCC[nI])) + ")" + hb_Eol()
+   NEXT
+   FOR nI := 1 TO Len(::aBCC)
+      cPs += "  $msg.Bcc.Add(" + HbNfeEmailPsString(AllTrim(::aBCC[nI])) + ")" + hb_Eol()
+   NEXT
+   cPs += "  $msg.Subject = " + HbNfeEmailPsString(HbNfeEmailHeaderText(::cSubject)) + hb_Eol()
+   cPs += "  $msg.Body = " + HbNfeEmailPsString(cBody) + hb_Eol()
+   cPs += "  $msg.IsBodyHtml = $" + IIf( lHtml, "true", "false" ) + hb_Eol()
+   FOR nI := 1 TO Len(::aFiles)
+      cFile := AllTrim(::aFiles[nI])
+      cPs += "  $msg.Attachments.Add((New-Object Net.Mail.Attachment(" + HbNfeEmailPsString(cFile) + "))) | Out-Null" + hb_Eol()
+   NEXT
+   cPs += "  $smtp.Send($msg)" + hb_Eol()
+   cPs += "  'OK' | Set-Content -Encoding ASCII -LiteralPath " + HbNfeEmailPsString(cResultFile) + hb_Eol()
+   cPs += "  exit 0" + hb_Eol()
+   cPs += "} catch {" + hb_Eol()
+   cPs += "  $_.Exception.ToString() | Set-Content -Encoding UTF8 -LiteralPath " + HbNfeEmailPsString(cResultFile) + hb_Eol()
+   cPs += "  exit 1" + hb_Eol()
+   cPs += "} finally {" + hb_Eol()
+   cPs += "  if ($msg -ne $null) { $msg.Dispose() }" + hb_Eol()
+   cPs += "  if ($smtp -ne $null) { $smtp.Dispose() }" + hb_Eol()
+   cPs += "}" + hb_Eol()
+
+   hb_MemoWrit( cPsFile, cPs )
+   nRet := hb_processRun( "powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File " + HbNfeEmailCmdQuote( cPsFile ),, @cOut, @cErr )
+
+   IF nRet == 0
+      aRetorno["OK"]:= .T.
+      aRetorno["MsgErro"]:= []
+   ELSE
+      aRetorno["OK"]:= .F.
+      aRetorno["MsgErro"]:= "Falha envio Gmail via PowerShell/.NET" + hb_Eol() + ;
+                            "ExitCode: " + LTrim(Str(nRet)) + hb_Eol() + ;
+                            "Erro: " + cErr + hb_Eol() + ;
+                            "Detalhe: " + IIf( File(cResultFile), MemoRead(cResultFile), cOut )
+   ENDIF
+
+   FErase( cPsFile )
+   FErase( cResultFile )
+
+   aRetorno["Provider"]:= ::cProvider
+   aRetorno["Server"]:= ::cServerIP
+   aRetorno["Porta"]:= ::nPortSMTP
+RETURN aRetorno
+
+STATIC FUNCTION HbNfeEmailPsString( cText )
+RETURN Chr(39) + StrTran( HbNfeEmailDefault( cText, [] ), Chr(39), Chr(39) + Chr(39) ) + Chr(39)
+
+STATIC FUNCTION HbNfeEmailCmdQuote( cText )
+RETURN Chr(34) + StrTran( AllTrim(cText), Chr(34), Chr(34) + Chr(34) ) + Chr(34)
+
+STATIC FUNCTION HbNfeEmailHeaderText( cText )
+RETURN StrTran( StrTran( HbNfeEmailDefault( cText, [] ), Chr(13), " " ), Chr(10), " " )
 
 STATIC FUNCTION HbNfeEmailJoin( aLista, cSep )
    LOCAL cRet:= [], nI
